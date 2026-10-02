@@ -1,0 +1,31 @@
+{
+  "name": "@saana/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@saana/shared": "workspace:*",
+    "@saana/ui": "workspace:*",
+    "next": "15.5.26",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "globals": "15.11.0",
+    "@saana/config": "workspace:*",
+    "@types/node": "20.16.11",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "autoprefixer": "10.4.20",
+    "eslint": "9.39.5",
+    "postcss": "8.5.28",
+    "tailwindcss": "3.4.14",
+    "typescript": "5.6.3"
+  }
+}

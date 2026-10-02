@@ -1,0 +1,38 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis, pgcrypto, citext]
+}
+
+/// Typed, versioned business-rule settings. Every change writes a new SettingVersion row.
+model Setting {
+  key       String           @id
+  valueType String           @map("value_type")
+  value     Json
+  version   Int              @default(1)
+  updatedBy String?          @map("updated_by") @db.Uuid
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  versions  SettingVersion[]
+
+  @@map("settings")
+}
+
+model SettingVersion {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key       String
+  version   Int
+  value     Json
+  changedBy String?  @map("changed_by") @db.Uuid
+  reason    String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  setting   Setting  @relation(fields: [key], references: [key])
+
+  @@unique([key, version])
+  @@map("setting_versions")
+}

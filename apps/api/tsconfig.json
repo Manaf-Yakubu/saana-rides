@@ -1,0 +1,12 @@
+{
+  "extends": "@saana/config/tsconfig.node.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "isolatedModules": false,
+    "strictPropertyInitialization": false,
+    "declaration": false
+  },
+  "include": ["src", "test"]
+}
