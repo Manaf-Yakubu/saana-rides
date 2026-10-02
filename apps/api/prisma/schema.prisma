@@ -36,3 +36,114 @@ model SettingVersion {
   @@unique([key, version])
   @@map("setting_versions")
 }
+
+enum UserRole {
+  MANAGEMENT
+  STAFF
+  DRIVER
+  PASSENGER
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum StaffType {
+  FINANCE
+  FLEET
+  OPERATIONS
+  SUPPORT
+}
+
+enum OtpPurpose {
+  LOGIN
+}
+
+model User {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone            String         @unique
+  email            String?        @unique @db.Citext
+  passwordHash     String?        @map("password_hash")
+  role             UserRole
+  status           UserStatus     @default(ACTIVE)
+  /// AES-256-GCM ciphertext of the base32 TOTP secret.
+  mfaSecret        String?        @map("mfa_secret")
+  mfaEnabledAt     DateTime?      @map("mfa_enabled_at") @db.Timestamptz(3)
+  /// Last accepted TOTP time step; codes at or before it are rejected as replays.
+  mfaLastTimeStep  Int?           @map("mfa_last_time_step")
+  failedLoginCount Int            @default(0) @map("failed_login_count")
+  lockedUntil      DateTime?      @map("locked_until") @db.Timestamptz(3)
+  lastLoginAt      DateTime?      @map("last_login_at") @db.Timestamptz(3)
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime?      @map("deleted_at") @db.Timestamptz(3)
+  staffProfile     StaffProfile?
+  refreshTokens    RefreshToken[]
+
+  @@index([role])
+  @@map("users")
+}
+
+model StaffProfile {
+  userId     String      @id @map("user_id") @db.Uuid
+  fullName   String      @map("full_name")
+  staffTypes StaffType[] @map("staff_types")
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user       User        @relation(fields: [userId], references: [id])
+
+  @@map("staff_profiles")
+}
+
+model RefreshToken {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  familyId      String    @map("family_id") @db.Uuid
+  tokenHash     String    @map("token_hash")
+  expiresAt     DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt     DateTime? @map("revoked_at") @db.Timestamptz(3)
+  revokedReason String?   @map("revoked_reason")
+  replacedById  String?   @map("replaced_by_id") @db.Uuid
+  ip            String?
+  userAgent     String?   @map("user_agent")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  user          User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([familyId])
+  @@map("refresh_tokens")
+}
+
+model OtpCode {
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone      String
+  purpose    OtpPurpose
+  codeHash   String     @map("code_hash")
+  attempts   Int        @default(0)
+  expiresAt  DateTime   @map("expires_at") @db.Timestamptz(3)
+  consumedAt DateTime?  @map("consumed_at") @db.Timestamptz(3)
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([phone, purpose, createdAt])
+  @@map("otp_codes")
+}
+
+/// Insert-only: a trigger rejects UPDATE, DELETE and TRUNCATE.
+model AuditLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorId   String?  @map("actor_id") @db.Uuid
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id")
+  before    Json?
+  after     Json?
+  ip        String?
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([entity, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
