@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: saana
+      POSTGRES_PASSWORD: saana
+      POSTGRES_DB: saana
+    ports: ['5432:5432']
+    volumes: ['pgdata:/var/lib/postgresql/data']
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U saana']
+      interval: 5s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    ports: ['6379:6379']
+  minio:
+    image: minio/minio:RELEASE.2024-10-13T13-34-11Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: saana
+      MINIO_ROOT_PASSWORD: saana-secret
+    ports: ['9000:9000', '9001:9001']
+    volumes: ['miniodata:/data']
+  mailpit:
+    image: axllent/mailpit:v1.20
+    ports: ['8025:8025', '1025:1025']
+volumes:
+  pgdata:
+  miniodata:
